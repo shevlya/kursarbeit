@@ -3,12 +3,11 @@ package ru.ssau.srestapp.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import ru.ssau.srestapp.dto.user.*;
 import ru.ssau.srestapp.exception.*;
-import ru.ssau.srestapp.security.CustomUserDetails;
 import ru.ssau.srestapp.service.UserService;
+import ru.ssau.srestapp.util.SecurityUtils;
 
 import java.util.List;
 
@@ -42,13 +41,13 @@ public class UserController {
 
     @GetMapping("/me")
     public UserResponseDto getCurrentUser() throws EntityNotFoundException {
-        Long currentUserId = getCurrentUserId();
+        Long currentUserId = SecurityUtils.getCurrentUserId();
         return userService.getById(currentUserId);
     }
 
     @PutMapping("/me")
     public UserResponseDto updateCurrentUser(@Valid @RequestBody UserProfileUpdateDto userProfileUpdateDto) throws DuplicateEntityException, EntityNotFoundException, AccessDeniedException {
-        Long currentUserId = getCurrentUserId();
+        Long currentUserId = SecurityUtils.getCurrentUserId();
         return userService.updateProfile(currentUserId, userProfileUpdateDto);
     }
 
@@ -61,12 +60,7 @@ public class UserController {
     @PatchMapping("/me/disability")
     @ResponseStatus(HttpStatus.OK)
     public UserResponseDto updateDisability(@RequestBody DisabilityUpdateDto disabilityUpdateDto) throws EntityNotFoundException, AccessDeniedException {
-        Long currentUserId = getCurrentUserId();
+        Long currentUserId = SecurityUtils.getCurrentUserId();
         return userService.updateDisability(currentUserId, disabilityUpdateDto.getHasDisability());
-    }
-
-    private Long getCurrentUserId() {
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return userDetails.getUserId();
     }
 }
