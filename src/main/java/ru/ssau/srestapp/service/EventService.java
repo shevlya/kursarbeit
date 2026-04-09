@@ -85,9 +85,128 @@ public class EventService {
     @Transactional
     public EventResponseDto submitChanges(Long eventId, @Valid EventSubmitChangesDto dto) throws EntityNotFoundException, EventNotEditableException {
         Event entity = findOrThrow(eventId);
+        checkEventEditable(entity);
+        Map<String, Object> changes = collectChangedFields(entity, dto);
+        if (changes.isEmpty()) {
+            return toDto(entity);
+        }
+        entity.setDraftChanges(changes);
+        entity.setModerationStatus(ModerationStatus.PENDING);
+        eventRepository.save(entity);
+        return toDto(entity);
+    }
+
+    @Transactional(readOnly = true)
+    public List<EventShortDto> getPendingEvents() {
+        return eventRepository.findByModerationStatus(ModerationStatus.PENDING)
+                .stream().map(this::toShortDto).toList();
+    }
+
+    @Transactional
+    public EventResponseDto approveChanges(Long eventId, ApproveChangesDto approveDto) throws EntityNotFoundException, ModerationException {
+        Event entity = findOrThrow(eventId);
+        checkModerationPending(entity);
+        Map<String, Object> changes = entity.getDraftChanges();
+        if (changes == null || changes.isEmpty()) {
+            return toDto(finalizeModeration(entity));
+        }
+        boolean applyAll = approveDto.getApplyAll() != null && approveDto.getApplyAll();
+        List<String> fieldsToApply = approveDto.getFields();
+        List<String> appliedFieldsRussian = new ArrayList<>();
+        for (Map.Entry<String, Object> entry : changes.entrySet()) {
+            String field = entry.getKey();
+            Object newValue = entry.getValue();
+            if (applyAll || (fieldsToApply != null && fieldsToApply.contains(field))) {
+                applyFieldChange(entity, field, newValue);
+                appliedFieldsRussian.add(mapFieldToRussian(field));
+            }
+        }
+        finalizeModeration(entity);
+        emailService.sendEventChangesApproved(
+                entity.getOrganizer().getEmail(),
+                entity.getEventName(),
+                appliedFieldsRussian,
+                "Администратор принял изменения"
+        );
+        return toDto(entity);
+    }
+
+    private void applyFieldChange(Event entity, String field, Object newValue) throws EntityNotFoundException {
+        switch (field) {
+            case "eventName" -> entity.setEventName((String) newValue);
+            case "eventDescription" -> entity.setEventDescription((String) newValue);
+            case "eventDate" -> entity.setEventDate(LocalDateTime.parse((String) newValue));
+            case "startTime" -> entity.setStartTime(LocalDateTime.parse((String) newValue));
+            case "endTime" -> entity.setEndTime(LocalDateTime.parse((String) newValue));
+            case "maxParticipants" -> entity.setMaxParticipants((Integer) newValue);
+            case "imageUrl" -> entity.setImageUrl((String) newValue);
+            case "price" -> entity.setPrice(new BigDecimal(newValue.toString()));
+            case "eventFormat" -> entity.setEventFormat((EventFormat) newValue);
+            case "eventCategoryId" -> entity.setEventCategory(findEventCategoryOrThrow(((Number) newValue).longValue()));
+            case "placeId" -> {
+                Long placeId = newValue != null ? ((Number) newValue).longValue() : null;
+                entity.setPlace(placeId != null ? findPlaceOrThrow(placeId) : null);
+            }
+        }
+    }
+
+    @Transactional
+    public void rejectChanges(Long eventId, String comment) throws EntityNotFoundException {
+        Event entity = findOrThrow(eventId);
+        Map<String, Object> changes = entity.getDraftChanges();
+        List<String> rejectedFieldsRussian = changes != null && !changes.isEmpty()
+                ? collectRussianFieldNames(changes)
+                : List.of();
+        finalizeModeration(entity);
+        if (!rejectedFieldsRussian.isEmpty()) {
+            emailService.sendEventChangesRejected(
+                    entity.getOrganizer().getEmail(),
+                    entity.getEventName(),
+                    rejectedFieldsRussian,
+                    comment != null ? comment : "Администратор отклонил изменения"
+            );
+        }
+    }
+
+    @Transactional
+    public EventResponseDto verify(Long id, Boolean verified, String comment, Boolean sendEmail) throws EntityNotFoundException {
+        Event entity = findOrThrow(id);
+        entity.setVerified(verified);
+        entity.setVerificationComment(comment);
+        if (sendEmail != null && sendEmail) {
+            sendVerificationEmail(entity, verified, comment);
+        }
+        return toDto(eventRepository.save(entity));
+    }
+
+    @Transactional
+    public void delete(Long id) throws EntityNotFoundException {
+        findOrThrow(id);
+        eventRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void updateEventStatuses() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Event> toStart = eventRepository.findEventsByStatusAndStartTimeBefore(EventStatus.PLANNED, now);
+        updateEventsStatus(toStart, EventStatus.ONGOING);
+        List<Event> toEnd = eventRepository.findEventsByStatusAndEndTimeBefore(EventStatus.ONGOING, now);
+        updateEventsStatus(toEnd, EventStatus.COMPLETED);
+    }
+
+    private void checkEventEditable(Event entity) throws EventNotEditableException {
         if (entity.getEventStatus() == EventStatus.ONGOING || entity.getEventStatus() == EventStatus.COMPLETED) {
             throw new EventNotEditableException();
         }
+    }
+
+    private void checkModerationPending(Event entity) throws ModerationException {
+        if (entity.getModerationStatus() != ModerationStatus.PENDING) {
+            throw new ModerationException();
+        }
+    }
+
+    private Map<String, Object> collectChangedFields(Event entity, EventSubmitChangesDto dto) {
         Map<String, Object> changes = new HashMap<>();
         if (dto.getEventName() != null && !dto.getEventName().equals(entity.getEventName()))
             changes.put("eventName", dto.getEventName());
@@ -111,157 +230,32 @@ public class EventService {
             changes.put("eventCategoryId", dto.getIdEventCategory());
         if (dto.getIdPlace() != null && (entity.getPlace() == null || !dto.getIdPlace().equals(entity.getPlace().getIdPlace())))
             changes.put("placeId", dto.getIdPlace());
-        if (changes.isEmpty()) {
-            return toDto(entity);
-        }
-        entity.setDraftChanges(changes);
-        entity.setModerationStatus(ModerationStatus.PENDING);
-        eventRepository.save(entity);
-        return toDto(entity);
+        return changes;
     }
 
-    @Transactional(readOnly = true)
-    public List<EventShortDto> getPendingEvents() {
-        return eventRepository.findByModerationStatus(ModerationStatus.PENDING)
-                .stream().map(this::toShortDto).toList();
+    private void sendVerificationEmail(Event entity, Boolean verified, String comment) {
+        if (verified) {
+            emailService.sendEventApproved(entity.getOrganizer().getEmail(), entity.getEventName(), comment);
+        } else {
+            emailService.sendEventRejected(entity.getOrganizer().getEmail(), entity.getEventName(), comment);
+        }
     }
 
-    @Transactional
-    public EventResponseDto approveChanges(Long eventId, ApproveChangesDto approveDto)
-            throws EntityNotFoundException, InvalidDateTimeException, ModerationException {
-        Event entity = findOrThrow(eventId);
-        if (entity.getModerationStatus() != ModerationStatus.PENDING) {
-            throw new ModerationException();
-        }
-        Map<String, Object> changes = entity.getDraftChanges();
-        if (changes == null || changes.isEmpty()) {
-            entity.setModerationStatus(ModerationStatus.PUBLISHED);
-            return toDto(eventRepository.save(entity));
-        }
-        boolean applyAll = approveDto.getApplyAll() != null && approveDto.getApplyAll();
-        List<String> fieldsToApply = approveDto.getFields();
-        List<String> appliedFieldsRussian = new ArrayList<>();
-        for (Map.Entry<String, Object> entry : changes.entrySet()) {
-            String field = entry.getKey();
-            Object newValue = entry.getValue();
-            if (applyAll || (fieldsToApply != null && fieldsToApply.contains(field))) {
-                applyFieldChange(entity, field, newValue);
-                appliedFieldsRussian.add(mapFieldToRussian(field));
-            }
-        }
+    private Event finalizeModeration(Event entity) {
         entity.setDraftChanges(null);
         entity.setModerationStatus(ModerationStatus.PUBLISHED);
-        eventRepository.save(entity);
-        emailService.sendEventChangesApproved(
-                entity.getOrganizer().getEmail(),
-                entity.getEventName(),
-                appliedFieldsRussian,
-                "Администратор принял изменения"
-        );
-        return toDto(entity);
+        return eventRepository.save(entity);
     }
 
-    private void applyFieldChange(Event entity, String field, Object newValue) throws EntityNotFoundException {
-        switch (field) {
-            case "eventName":
-                entity.setEventName((String) newValue);
-                break;
-            case "eventDescription":
-                entity.setEventDescription((String) newValue);
-                break;
-            case "eventDate":
-                entity.setEventDate(LocalDateTime.parse((String) newValue));
-                break;
-            case "startTime":
-                entity.setStartTime(LocalDateTime.parse((String) newValue));
-                break;
-            case "endTime":
-                entity.setEndTime(LocalDateTime.parse((String) newValue));
-                break;
-            case "maxParticipants":
-                entity.setMaxParticipants((Integer) newValue);
-                break;
-            case "imageUrl":
-                entity.setImageUrl((String) newValue);
-                break;
-            case "price":
-                entity.setPrice(new BigDecimal(newValue.toString()));
-                break;
-            case "eventFormat":
-                entity.setEventFormat((EventFormat) newValue);
-                break;
-            case "eventCategoryId":
-                entity.setEventCategory(findEventCategoryOrThrow(((Number) newValue).longValue()));
-                break;
-            case "placeId":
-                Long placeId = newValue != null ? ((Number) newValue).longValue() : null;
-                entity.setPlace(placeId != null ? findPlaceOrThrow(placeId) : null);
-                break;
-            default:
-        }
+    private List<String> collectRussianFieldNames(Map<String, Object> changes) {
+        return changes.keySet().stream()
+                .map(this::mapFieldToRussian)
+                .toList();
     }
 
-    @Transactional
-    public void rejectChanges(Long eventId, String comment) throws EntityNotFoundException {
-        Event entity = findOrThrow(eventId);
-        Map<String, Object> changes = entity.getDraftChanges();
-        List<String> rejectedFieldsRussian = new ArrayList<>();
-        if (changes != null && !changes.isEmpty()) {
-            for (String field : changes.keySet()) {
-                rejectedFieldsRussian.add(mapFieldToRussian(field));
-            }
-        }
-        entity.setDraftChanges(null);
-        entity.setModerationStatus(ModerationStatus.PUBLISHED);
-        eventRepository.save(entity);
-        if (!rejectedFieldsRussian.isEmpty()) {
-            emailService.sendEventChangesRejected(
-                    entity.getOrganizer().getEmail(),
-                    entity.getEventName(),
-                    rejectedFieldsRussian,
-                    comment != null ? comment : "Администратор отклонил изменения"
-            );
-        }
-    }
-
-    @Transactional
-    public EventResponseDto verify(Long id, Boolean verified, String comment, Boolean sendEmail) throws EntityNotFoundException {
-        Event entity = findOrThrow(id);
-        entity.setVerified(verified);
-        entity.setVerificationComment(comment);
-        if (sendEmail != null && sendEmail) {
-            if (verified) {
-                emailService.sendEventApproved(entity.getOrganizer().getEmail(),
-                        entity.getEventName(), comment);
-            } else {
-                emailService.sendEventRejected(entity.getOrganizer().getEmail(),
-                        entity.getEventName(), comment);
-            }
-        }
-        return toDto(eventRepository.save(entity));
-    }
-
-    @Transactional
-    public void delete(Long id) throws EntityNotFoundException {
-        findOrThrow(id);
-        eventRepository.deleteById(id);
-    }
-
-    @Transactional
-    public void updateEventStatuses() throws EntityNotFoundException {
-        LocalDateTime now = LocalDateTime.now();
-        // Начинаем мероприятия, которые должны начаться (PLANNED -> ONGOING)
-        List<Event> toStart = eventRepository.findEventsByStatusAndStartTimeBefore(EventStatus.PLANNED, now);
-        for (Event event : toStart) {
-            event.setEventStatus(EventStatus.ONGOING);
-        }
-        // Завершаем мероприятия, которые должны закончиться (ONGOING -> COMPLETED)
-        List<Event> toEnd = eventRepository.findEventsByStatusAndEndTimeBefore(EventStatus.ONGOING, now);
-        for (Event event : toEnd) {
-            event.setEventStatus(EventStatus.COMPLETED);
-        }
-        eventRepository.saveAll(toStart);
-        eventRepository.saveAll(toEnd);
+    private void updateEventsStatus(List<Event> events, EventStatus newStatus) {
+        events.forEach(event -> event.setEventStatus(newStatus));
+        eventRepository.saveAll(events);
     }
 
     private void validateDateTime(LocalDateTime startTime, LocalDateTime endTime) throws InvalidDateTimeException {
@@ -313,12 +307,12 @@ public class EventService {
                 event.getIdEvent(),
                 event.getOrganizer().getIdUser(),
                 event.getOrganizer().getFio(),
-                event.getAdmin() != null ? event.getAdmin().getIdUser() : null,
-                event.getAdmin() != null ? event.getAdmin().getFio() : null,
+                getAdminIdOrNull(event),
+                getAdminFioOrNull(event),
                 event.getEventFormat(),
                 event.getEventStatus(),
                 event.getPlace() != null ? event.getPlace().getIdPlace() : null,
-                event.getPlace() != null ? event.getPlace().getPlaceName() : null,
+                getPlaceNameOrNull(event),
                 event.getPlace() != null ? determinePlaceType(event.getPlace()) : null,
                 event.getEventCategory().getIdEventCategory(),
                 event.getEventCategory().getEventCategoryName(),
@@ -348,7 +342,7 @@ public class EventService {
                 event.getEventStatus(),
                 event.getEventCategory().getEventCategoryName(),
                 event.getEventCategory().getIdEventCategory(),
-                event.getPlace() != null ? event.getPlace().getPlaceName() : null,
+                getPlaceNameOrNull(event),
                 event.getPrice(),
                 event.getImageUrl(),
                 event.getVerified(),
@@ -379,5 +373,17 @@ public class EventService {
         if (clazz == PhysicalPlace.class) return "PHYSICAL";
         if (clazz == OnlinePlace.class) return "ONLINE";
         return "UNKNOWN";
+    }
+
+    private String getPlaceNameOrNull(Event event) {
+        return event.getPlace() != null ? event.getPlace().getPlaceName() : null;
+    }
+
+    private Long getAdminIdOrNull(Event event) {
+        return event.getAdmin() != null ? event.getAdmin().getIdUser() : null;
+    }
+
+    private String getAdminFioOrNull(Event event) {
+        return event.getAdmin() != null ? event.getAdmin().getFio() : null;
     }
 }

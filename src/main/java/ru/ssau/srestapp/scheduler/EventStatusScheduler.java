@@ -22,8 +22,6 @@ public class EventStatusScheduler {
             log.info("Запуск планового обновления статусов мероприятий");
             eventService.updateEventStatuses();
             log.info("Статусы мероприятий успешно обновлены");
-        } catch (EntityNotFoundException e) {
-            log.error("Ошибка при обновлении статусов: {}", e.getMessage());
         } catch (Exception e) {
             log.error("Критическая ошибка scheduler: {}", e.getMessage(), e);
         }
