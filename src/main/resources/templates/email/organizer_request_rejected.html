@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заявка отклонена</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f3ff;">
+<table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+        <td align="center" style="padding: 40px 0;">
+            <table role="presentation"
+                   style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(124, 58, 237, 0.1);">
+
+                <tr>
+                    <td style="background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Заявка отклонена</h1>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding: 40px 30px;">
+                        <p style="margin: 0 0 20px 0; color: #1F2937; font-size: 16px; line-height: 1.6;">
+                            Здравствуйте, <strong th:text="${userName}">Участник</strong>!
+                        </p>
+                        <p style="margin: 0 0 20px 0; color: #1F2937; font-size: 16px; line-height: 1.6;">
+                            К сожалению, ваша заявка на роль организатора мероприятий не была одобрена.
+                        </p>
+
+                        <div style="background-color: #FEF2F2; border: 2px solid #DC2626; padding: 25px; margin: 20px 0; border-radius: 8px;">
+                            <h3 style="margin: 0 0 15px 0; color: #DC2626; font-size: 18px;">Комментарий
+                                администратора</h3>
+                            <p style="margin: 0; color: #1F2937; font-size: 15px; line-height: 1.6;">
+                                <span th:text="${comment}"
+                                      style="color: #6B7280;">Ваша заявка не прошла модерацию</span>
+                            </p>
+                        </div>
+
+                        <div style="background-color: #F5F3FF; border-left: 4px solid #7C3AED; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+                            <p style="margin: 0; color: #1F2937; font-size: 14px; line-height: 1.6;">
+                                <strong>Совет:</strong><br>
+                                Вы можете подать новую заявку, уточнив детали планируемого мероприятия.
+                                Убедитесь, что описание содержит конкретную идею, цели и целевую аудиторию.
+                            </p>
+                        </div>
+
+                        <table role="presentation" style="margin: 30px 0; border-collapse: collapse;">
+                            <tr>
+                                <td align="center"
+                                    style="border-radius: 8px; background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);">
+                                    <a th:href="${baseUrl}"
+                                       style="display: inline-block; padding: 14px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 8px;">
+                                        Подать новую заявку
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="background-color: #F5F3FF; padding: 30px; text-align: center; border-top: 1px solid #E5E7EB;">
+                        <p style="margin: 0; color: #6B7280; font-size: 14px;">
+                            Команда <strong style="color: #7C3AED;">Молодёжный Досуг</strong>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Участие подтверждено</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f3ff;">
+<table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+        <td align="center" style="padding: 40px 0;">
+            <table role="presentation"
+                   style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.1);">
+
+                <!-- Header -->
+                <tr>
+                    <td style="background: linear-gradient(135deg, #10B981 0%, #34D399 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">✓ Участие
+                            подтверждено</h1>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td style="padding: 40px 30px;">
+                        <p style="margin: 0 0 20px 0; color: #1F2937; font-size: 16px; line-height: 1.6;">
+                            Здравствуйте, <strong th:text="${userName}">Участник</strong>!
+                        </p>
+                        <p style="margin: 0 0 20px 0; color: #1F2937; font-size: 16px; line-height: 1.6;">
+                            Спасибо, что посетили наше мероприятие! Мы рады, что вы были с нами.
+                        </p>
+
+                        <div style="background-color: #ECFDF5; border: 2px solid #10B981; padding: 25px; margin: 20px 0; border-radius: 8px;">
+                            <h3 style="margin: 0 0 15px 0; color: #10B981; font-size: 18px;">Детали мероприятия</h3>
+                            <p style="margin: 0 0 10px 0; color: #1F2937; font-size: 15px;">
+                                <strong>Мероприятие:</strong> <span th:text="${eventName}">Название</span>
+                            </p>
+                            <p style="margin: 0 0 10px 0; color: #1F2937; font-size: 15px;">
+                                <strong>Дата:</strong> <span th:text="${eventDate}">Дата</span>
+                            </p>
+                            <p style="margin: 0; color: #1F2937; font-size: 15px;">
+                                <strong>Статус:</strong> <span style="color: #10B981; font-weight: 600;">Посещено</span>
+                            </p>
+                        </div>
+
+                        <p style="margin: 0 0 25px 0; color: #1F2937; font-size: 16px; line-height: 1.6;">
+                            Надеемся, вам понравилось! Следите за новыми событиями — впереди ещё много интересного.
+                        </p>
+
+                        <table role="presentation" style="margin: 30px 0; border-collapse: collapse;">
+                            <tr>
+                                <td align="center"
+                                    style="border-radius: 8px; background: linear-gradient(135deg, #10B981 0%, #34D399 100%);">
+                                    <a th:href="${baseUrl}"
+                                       style="display: inline-block; padding: 14px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 8px;">
+                                        Смотреть другие мероприятия
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color: #F5F3FF; padding: 30px; text-align: center; border-top: 1px solid #E5E7EB;">
+                        <p style="margin: 0; color: #6B7280; font-size: 14px;">
+                            Команда <strong style="color: #7C3AED;">Молодёжный Досуг</strong>
+                        </p>
+                        <p style="margin: 10px 0 0 0; color: #9CA3AF; font-size: 13px;">
+                            <a th:href="${baseUrl + '/unsubscribe'}" style="color: #9CA3AF; text-decoration: none;">Отписаться
+                                от уведомлений</a>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
