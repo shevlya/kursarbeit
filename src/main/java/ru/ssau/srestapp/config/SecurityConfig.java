@@ -8,6 +8,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +25,9 @@ import static org.springframework.http.HttpMethod.*;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String ADMIN = "ADMIN";
+    private static final String ORGANIZER = "ORGANIZER";
+
     private final JwtFilter jwtFilter;
     private final CorsConfigurationSource corsConfigurationSource;
 
@@ -33,14 +37,17 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder, CustomUserDetailsService customUserDetailsService) {
-        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(customUserDetailsService);
-        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
-        return daoAuthenticationProvider;
+    public DaoAuthenticationProvider authenticationProvider(
+            PasswordEncoder passwordEncoder,
+            CustomUserDetailsService customUserDetailsService) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(customUserDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return provider;
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -48,50 +55,72 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sessionManagement ->
-                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/users/register").permitAll()
-                        .requestMatchers(GET, "/api/categories/**").permitAll()
-                        .requestMatchers("/api/categories/**").hasRole("ADMIN")
-                        .requestMatchers(GET, "/api/places/**").permitAll()
-                        .requestMatchers("/api/places/**").hasRole("ADMIN")
-                        .requestMatchers(GET, "/api/online-places/**").permitAll()
-                        .requestMatchers(POST, "/api/online-places").hasAnyRole("ORGANIZER", "ADMIN")
-                        .requestMatchers("/api/online-places/**").hasRole("ADMIN")
-                        .requestMatchers(GET, "/api/physical-places/**").permitAll()
-                        .requestMatchers(POST, "/api/physical-places").hasAnyRole("ORGANIZER", "ADMIN")
-                        .requestMatchers("/api/physical-places/**").hasRole("ADMIN")
-                        .requestMatchers(GET, "/api/avatars/**").permitAll()
-                        .requestMatchers("/api/avatars/**").hasRole("ADMIN")
-                        .requestMatchers(GET, "/api/events/**").permitAll()
-                        .requestMatchers(POST, "/api/events").hasAnyRole("ORGANIZER", "ADMIN")
-                        .requestMatchers(PUT, "/api/events/{id}/submit").hasAnyRole("ORGANIZER", "ADMIN")
-                        .requestMatchers(PUT, "/api/events/**").denyAll()
-                        .requestMatchers(DELETE, "/api/events/**").hasAnyRole("ORGANIZER", "ADMIN")
-                        .requestMatchers(PATCH, "/api/events/{id}/verify").hasRole("ADMIN")
-                        .requestMatchers(POST, "/api/events/update-statuses").hasRole("ADMIN")
-                        .requestMatchers("/api/events/admin/**").hasRole("ADMIN")
-                        .requestMatchers(GET, "/api/users/me").authenticated()
-                        .requestMatchers(PUT, "/api/users/me").authenticated()
-                        .requestMatchers(PATCH, "/api/users/me/**").authenticated()
-                        .requestMatchers(GET, "/api/users/{id}").hasRole("ADMIN")
-                        .requestMatchers(PUT, "/api/users/{id}").hasRole("ADMIN")
-                        .requestMatchers(DELETE, "/api/users/{id}").hasRole("ADMIN")
-                        .requestMatchers(GET, "/api/users").hasRole("ADMIN")
-                        .requestMatchers(POST, "/api/organizer-requests/me").authenticated()
-                        .requestMatchers(GET, "/api/organizer-requests/me").authenticated()
-                        .requestMatchers("/api/organizer-requests/**").hasRole("ADMIN")
-                        .requestMatchers("/api/users/me/interests/**").authenticated()
-                        .requestMatchers(GET, "/api/users/me/interests/user/{userId}").hasRole("ADMIN")
-                        .requestMatchers(GET, "/api/roles/**").permitAll()
-                        .requestMatchers("/api/roles/**").hasRole("ADMIN")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/auth/me").authenticated()
-                        .anyRequest().authenticated()
-                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(this::configureAuthorization)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
+    }
+
+    private void configureAuthorization(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        configurePublicEndpoints(auth);
+        configureAuthenticatedEndpoints(auth);
+        configureOrganizerEndpoints(auth);
+        configureAdminEndpoints(auth);
+        auth.anyRequest().authenticated();
+    }
+
+    private void configurePublicEndpoints(
+            AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth.requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/users/register").permitAll()
+                .requestMatchers(GET, "/api/categories/**").permitAll()
+                .requestMatchers(GET, "/api/places/**").permitAll()
+                .requestMatchers(GET, "/api/online-places/**").permitAll()
+                .requestMatchers(GET, "/api/physical-places/**").permitAll()
+                .requestMatchers(GET, "/api/avatars/**").permitAll()
+                .requestMatchers(GET, "/api/events/**").permitAll()
+                .requestMatchers(GET, "/api/roles/**").permitAll();
+    }
+
+    private void configureAuthenticatedEndpoints(
+            AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth.requestMatchers(GET, "/api/users/me").authenticated()
+                .requestMatchers(PUT, "/api/users/me").authenticated()
+                .requestMatchers(PATCH, "/api/users/me/**").authenticated()
+                .requestMatchers(POST, "/api/organizer-requests/me").authenticated()
+                .requestMatchers(GET, "/api/organizer-requests/me").authenticated()
+                .requestMatchers("/api/users/me/interests/**").authenticated()
+                .requestMatchers("/auth/me").authenticated();
+    }
+
+    private void configureOrganizerEndpoints(
+            AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth.requestMatchers(POST, "/api/online-places").hasAnyRole(ADMIN, ORGANIZER)
+                .requestMatchers(POST, "/api/physical-places").hasAnyRole(ADMIN, ORGANIZER)
+                .requestMatchers(POST, "/api/events").hasAnyRole(ADMIN, ORGANIZER)
+                .requestMatchers(PUT, "/api/events/{id}/submit").hasAnyRole(ADMIN, ORGANIZER)
+                .requestMatchers(DELETE, "/api/events/**").hasAnyRole(ADMIN, ORGANIZER);
+    }
+
+    private void configureAdminEndpoints(
+            AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth.requestMatchers("/api/categories/**").hasRole(ADMIN)
+                .requestMatchers("/api/places/**").hasRole(ADMIN)
+                .requestMatchers("/api/online-places/**").hasRole(ADMIN)
+                .requestMatchers("/api/physical-places/**").hasRole(ADMIN)
+                .requestMatchers("/api/avatars/**").hasRole(ADMIN)
+                .requestMatchers(PUT, "/api/events/**").denyAll()
+                .requestMatchers(PATCH, "/api/events/{id}/verify").hasRole(ADMIN)
+                .requestMatchers(POST, "/api/events/update-statuses").hasRole(ADMIN)
+                .requestMatchers("/api/events/admin/**").hasRole(ADMIN)
+                .requestMatchers(GET, "/api/users/{id}").hasRole(ADMIN)
+                .requestMatchers(PUT, "/api/users/{id}").hasRole(ADMIN)
+                .requestMatchers(DELETE, "/api/users/{id}").hasRole(ADMIN)
+                .requestMatchers(GET, "/api/users").hasRole(ADMIN)
+                .requestMatchers("/api/organizer-requests/**").hasRole(ADMIN)
+                .requestMatchers(GET, "/api/users/me/interests/user/{userId}").hasRole(ADMIN)
+                .requestMatchers("/api/roles/**").hasRole(ADMIN)
+                .requestMatchers("/api/admin/**").hasRole(ADMIN);
     }
 }
