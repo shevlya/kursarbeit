@@ -42,9 +42,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query("SELECT e FROM Event e " +
             "JOIN FETCH e.organizer " +
-            "JOIN FETCH e.eventFormat " +
             "JOIN FETCH e.eventCategory " +
-            "JOIN FETCH e.eventStatus " +
             "LEFT JOIN FETCH e.place " +
             "LEFT JOIN FETCH e.admin " +
             "WHERE e.idEvent = :id")

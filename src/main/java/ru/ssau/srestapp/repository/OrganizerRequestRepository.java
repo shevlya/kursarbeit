@@ -17,7 +17,7 @@ public interface OrganizerRequestRepository extends JpaRepository<OrganizerReque
     @Query("SELECT o FROM OrganizerRequest o WHERE o.user.idUser = :userId AND o.requestStatus IN :statuses")
     Optional<OrganizerRequest> findByUserIdAndActiveStatus(@Param("userId") Long userId, @Param("statuses") List<RequestStatus> statuses);
 
-    @Query("SELECT o FROM OrganizerRequest o JOIN FETCH o.user JOIN FETCH o.requestStatus ORDER BY o.submittedAt DESC")
+    @Query("SELECT o FROM OrganizerRequest o JOIN FETCH o.user ORDER BY o.submittedAt DESC")
     List<OrganizerRequest> findAllWithUser();
 
     List<OrganizerRequest> findByRequestStatus(RequestStatus status);

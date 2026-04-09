@@ -19,6 +19,6 @@ public interface UserInterestRepository extends JpaRepository<UserInterest, User
 
     void deleteAllByIdUser_IdUser(Long userId);
 
-    @Query("SELECT ui FROM UserInterest ui JOIN FETCH ui.idEventCategory WHERE ui.idUser.idUser = :userId AND ui.idEventCategory.eventCategoryName IS NOT NULL")
+    @Query("SELECT ui FROM UserInterest ui JOIN FETCH ui.idEventCategory WHERE ui.idUser.idUser = :userId")
     List<UserInterest> findActiveInterestsByUserId(@Param("userId") Long userId);
 }

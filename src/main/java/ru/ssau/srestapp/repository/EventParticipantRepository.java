@@ -18,8 +18,10 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
 
     Optional<EventParticipant> findByIdUser_IdUserAndIdEvent_IdEvent(Long userId, Long eventId);
 
-    @Query("SELECT COUNT(ep) FROM EventParticipant ep WHERE ep.idEvent.idEvent = :eventId AND ep.participationStatus = :status")
-    long countByParticipationStatus(@Param("eventId") Long eventId, @Param("status") ParticipationStatus status);
+    /*@Query("SELECT COUNT(ep) FROM EventParticipant ep WHERE ep.idEvent.idEvent = :eventId AND ep.participationStatus = :status")
+    long countByParticipationStatus(@Param("eventId") Long eventId, @Param("status") ParticipationStatus status);*/
+
+    long countByIdEvent_IdEventAndParticipationStatus(Long eventId, ParticipationStatus status);
 
     @Query("SELECT ep FROM EventParticipant ep WHERE ep.idEvent.idEvent = :eventId AND ep.participationStatus = :status ORDER BY ep.registrationDate ASC")
     List<EventParticipant> findByParticipationStatus(@Param("eventId") Long eventId, @Param("status") ParticipationStatus status);

@@ -1,6 +1,5 @@
 package ru.ssau.srestapp.dto.event;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
