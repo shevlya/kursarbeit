@@ -19,6 +19,7 @@ import ru.ssau.srestapp.repository.UserInterestRepository;
 import ru.ssau.srestapp.repository.UserRepository;
 import ru.ssau.srestapp.util.SecurityUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -35,7 +36,7 @@ public class UserInterestService {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         return userInterestRepository.findByUserId(currentUserId)
                 .stream()
-                .map(ui -> toCategoryDto(ui.getIdEventCategory()))
+                .map(this::mapUserInterestToCategoryDto)
                 .toList();
     }
 
@@ -44,7 +45,7 @@ public class UserInterestService {
         findUserOrThrow(userId);
         return userInterestRepository.findByUserId(userId)
                 .stream()
-                .map(ui -> toCategoryDto(ui.getIdEventCategory()))
+                .map(this::mapUserInterestToCategoryDto)
                 .toList();
     }
 
@@ -53,7 +54,8 @@ public class UserInterestService {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         User user = findUserOrThrow(currentUserId);
         EventCategory category = findCategoryOrThrow(dto.getEventCategoryId());
-        if (userInterestRepository.existsByIdUser_IdUserAndIdEventCategory_IdEventCategory(currentUserId, dto.getEventCategoryId())) {
+        if (userInterestRepository.existsByIdUser_IdUserAndIdEventCategory_IdEventCategory(
+                currentUserId, dto.getEventCategoryId())) {
             throw new DuplicateEntityException("Эта категория уже в ваших интересах");
         }
         UserInterest entity = new UserInterest();
@@ -66,8 +68,7 @@ public class UserInterestService {
     public void removeInterestForCurrentUser(Long categoryId) throws EntityNotFoundException {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         findCategoryOrThrow(categoryId);
-        if (!userInterestRepository.existsByIdUser_IdUserAndIdEventCategory_IdEventCategory(
-                currentUserId, categoryId)) {
+        if (!userInterestRepository.existsByIdUser_IdUserAndIdEventCategory_IdEventCategory(currentUserId, categoryId)) {
             throw new EntityNotFoundException("Интерес не найден");
         }
         userInterestRepository.deleteByIdUser_IdUserAndIdEventCategory_IdEventCategory(currentUserId, categoryId);
@@ -79,13 +80,15 @@ public class UserInterestService {
         userInterestRepository.deleteAllByIdUser_IdUser(currentUserId);
         if (dto.getCategoryIds() != null && !dto.getCategoryIds().isEmpty()) {
             User user = findUserOrThrow(currentUserId);
+            List<UserInterest> entities = new ArrayList<>();
             for (Long categoryId : dto.getCategoryIds()) {
                 EventCategory category = findCategoryOrThrow(categoryId);
                 UserInterest entity = new UserInterest();
                 entity.setIdUser(user);
                 entity.setIdEventCategory(category);
-                userInterestRepository.save(entity);
+                entities.add(entity);
             }
+            userInterestRepository.saveAll(entities);
         }
         return getCategoriesForCurrentUser();
     }
@@ -94,6 +97,10 @@ public class UserInterestService {
     public void deleteAllInterestsForCurrentUser() {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         userInterestRepository.deleteAllByIdUser_IdUser(currentUserId);
+    }
+
+    private UserCategoryDto mapUserInterestToCategoryDto(UserInterest ui) {
+        return toCategoryDto(ui.getIdEventCategory());
     }
 
     private User findUserOrThrow(Long id) throws EntityNotFoundException {
