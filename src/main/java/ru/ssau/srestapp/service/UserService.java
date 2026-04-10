@@ -40,7 +40,7 @@ public class UserService {
         User entity = new User();
         entity.setUserStatus(dto.getUserStatus());
         entity.setRole(findRoleOrThrow(dto.getIdRole()));
-        entity.setAvatar(dto.getIdAvatar() != null ? findAvatarOrThrow(dto.getIdAvatar()) : null);
+        entity.setAvatar(getAvatarOrNull(dto.getIdAvatar()));
         entity.setFio(dto.getFio());
         entity.setEmail(dto.getEmail());
         entity.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
@@ -121,32 +121,33 @@ public class UserService {
     }
 
     private void updateUserFromRequest(User user, UserRequestDto dto) throws EntityNotFoundException {
-        user.setAvatar(dto.getIdAvatar() != null ? findAvatarOrThrow(dto.getIdAvatar()) : null);
+        user.setAvatar(getAvatarOrNull(dto.getIdAvatar()));
         user.setFio(dto.getFio());
         user.setBirthDate(dto.getBirthDate());
         user.setHasDisability(dto.getHasDisability());
     }
 
     private void updateUserFromProfileDto(User user, UserProfileUpdateDto dto) throws EntityNotFoundException {
-        user.setAvatar(dto.getIdAvatar() != null ? findAvatarOrThrow(dto.getIdAvatar()) : null);
+        user.setAvatar(getAvatarOrNull(dto.getIdAvatar()));
         user.setFio(dto.getFio());
         user.setBirthDate(dto.getBirthDate());
         user.setHasDisability(dto.getHasDisability());
     }
 
+    private Avatar getAvatarOrNull(Long avatarId) throws EntityNotFoundException {
+        return avatarId != null ? findAvatarOrThrow(avatarId) : null;
+    }
+
     private User findOrThrow(Long id) throws EntityNotFoundException {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(EntityType.USER.notFound(id)));
+        return userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(EntityType.USER.notFound(id)));
     }
 
     private Role findRoleOrThrow(Long id) throws EntityNotFoundException {
-        return roleRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(EntityType.ROLE.notFoundFeminine(id)));
+        return roleRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(EntityType.ROLE.notFoundFeminine(id)));
     }
 
     private Avatar findAvatarOrThrow(Long id) throws EntityNotFoundException {
-        return avatarRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(EntityType.AVATAR.notFound(id)));
+        return avatarRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(EntityType.AVATAR.notFound(id)));
     }
 
     private void checkUniqueEmail(String email) throws EmailAlreadyExistsException {
@@ -156,8 +157,9 @@ public class UserService {
     }
 
     private UserResponseDto toDto(User user) {
-        Long avatarId = user.getAvatar() != null ? user.getAvatar().getIdAvatar() : null;
-        String avatarUrl = user.getAvatar() != null ? user.getAvatar().getAvatarUrl() : null;
+        Avatar avatar = user.getAvatar();
+        Long avatarId = avatar != null ? avatar.getIdAvatar() : null;
+        String avatarUrl = avatar != null ? avatar.getAvatarUrl() : null;
         return new UserResponseDto(
                 user.getIdUser(),
                 user.getUserStatus(),
