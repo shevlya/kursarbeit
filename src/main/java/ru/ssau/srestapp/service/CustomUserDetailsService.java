@@ -24,19 +24,24 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(EntityType.USER.notFoundByEmail(email)));
-        List<SimpleGrantedAuthority> authorities = user.getRole() != null ? List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName().toUpperCase())) : List.of();
-        return new CustomUserDetails(
-                user.getIdUser(),
-                user.getEmail(),
-                user.getPasswordHash(),
-                authorities
-        );
+        return toCustomUserDetails(user, extractAuthorities(user));
     }
 
     @Transactional(readOnly = true)
     public CustomUserDetails loadUserById(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException(EntityType.USER.notFound(userId)));
-        List<SimpleGrantedAuthority> authorities = user.getRole() != null ? List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName().toUpperCase())) : List.of();
+        return toCustomUserDetails(user, extractAuthorities(user));
+    }
+
+    private List<SimpleGrantedAuthority> extractAuthorities(User user) {
+        if (user.getRole() == null) {
+            return List.of();
+        }
+        String roleName = "ROLE_" + user.getRole().getRoleName().toUpperCase();
+        return List.of(new SimpleGrantedAuthority(roleName));
+    }
+
+    private CustomUserDetails toCustomUserDetails(User user, List<SimpleGrantedAuthority> authorities) {
         return new CustomUserDetails(
                 user.getIdUser(),
                 user.getEmail(),
