@@ -22,6 +22,9 @@ import java.util.Map;
 @Slf4j
 public class EmailService {
 
+    private static final String ACTION_URL_EVENTS = "/events";
+    private static final String ACTION_URL_CREATE_EVENT = "/events/create";
+
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
 
@@ -79,44 +82,38 @@ public class EmailService {
         return templateEngine.process("email/" + templateName, context);
     }
 
+    private String resolveComment(String comment, String defaultComment) {
+        return comment != null ? comment : defaultComment;
+    }
+
     public void sendEventApproved(String to, String eventName, String comment) {
-        Map<String, Object> variables = new java.util.HashMap<>();
+        Map<String, Object> variables = new HashMap<>();
         variables.put("eventName", eventName);
-        variables.put("comment", comment != null ? comment : "Мероприятие успешно прошло модерацию");
-        variables.put("actionUrl", baseUrl + "/events");
+        variables.put("comment", resolveComment(comment, "Мероприятие успешно прошло модерацию"));
+        variables.put("actionUrl", baseUrl + ACTION_URL_EVENTS);
         sendEmail(to, EmailTemplate.EVENT_APPROVED, variables);
     }
 
     public void sendEventRejected(String to, String eventName, String comment) {
-        Map<String, Object> variables = new java.util.HashMap<>();
+        Map<String, Object> variables = new HashMap<>();
         variables.put("eventName", eventName);
-        variables.put("comment", comment != null ? comment : "Мероприятие не прошло модерацию");
-        variables.put("actionUrl", baseUrl + "/events/create");
+        variables.put("comment", resolveComment(comment, "Мероприятие не прошло модерацию"));
+        variables.put("actionUrl", baseUrl + ACTION_URL_CREATE_EVENT);
         sendEmail(to, EmailTemplate.EVENT_REJECTED, variables);
     }
 
-    /*
-    public void sendEventEdited(String to, String eventName, String comment, boolean notify) {
-        if (!notify) return;
-        Map<String, Object> variables = new java.util.HashMap<>();
-        variables.put("eventName", eventName);
-        variables.put("comment", comment != null ? comment : "Администратор внёс изменения");
-        variables.put("actionUrl", baseUrl + "/events");
-        sendEmail(to, EmailTemplate.EVENT_EDITED, variables);
-    }*/
-
     public void sendParticipationConfirmed(String to, String userName, String eventName, String eventDate, String placeName) {
-        Map<String, Object> variables = new java.util.HashMap<>();
+        Map<String, Object> variables = new HashMap<>();
         variables.put("userName", userName);
         variables.put("eventName", eventName);
         variables.put("eventDate", eventDate);
         variables.put("placeName", placeName);
-        variables.put("actionUrl", baseUrl + "/events");
+        variables.put("actionUrl", baseUrl + ACTION_URL_EVENTS);
         sendEmail(to, EmailTemplate.PARTICIPATION_CONFIRMED, variables);
     }
 
     public void sendParticipationCancelled(String to, String userName, String eventName, String eventDate) {
-        Map<String, Object> variables = new java.util.HashMap<>();
+        Map<String, Object> variables = new HashMap<>();
         variables.put("userName", userName);
         variables.put("eventName", eventName);
         variables.put("eventDate", eventDate);
@@ -124,67 +121,67 @@ public class EmailService {
     }
 
     public void sendParticipationRejected(String to, String userName, String eventName, String comment) {
-        Map<String, Object> variables = new java.util.HashMap<>();
+        Map<String, Object> variables = new HashMap<>();
         variables.put("userName", userName);
         variables.put("eventName", eventName);
-        variables.put("comment", comment != null ? comment : "Организатор отклонил вашу заявку");
+        variables.put("comment", resolveComment(comment, "Организатор отклонил вашу заявку"));
         sendEmail(to, EmailTemplate.PARTICIPATION_REJECTED, variables);
     }
 
     public void sendWaitlistPromoted(String to, String userName, String eventName, String eventDate) {
-        Map<String, Object> variables = new java.util.HashMap<>();
+        Map<String, Object> variables = new HashMap<>();
         variables.put("userName", userName);
         variables.put("eventName", eventName);
         variables.put("eventDate", eventDate);
-        variables.put("actionUrl", baseUrl + "/events");
+        variables.put("actionUrl", baseUrl + ACTION_URL_EVENTS);
         sendEmail(to, EmailTemplate.WAITLIST_PROMOTED, variables);
     }
 
     public void sendWelcome(String to, String userName) {
-        Map<String, Object> variables = new java.util.HashMap<>();
+        Map<String, Object> variables = new HashMap<>();
         variables.put("userName", userName);
-        variables.put("actionUrl", baseUrl + "/events");
+        variables.put("actionUrl", baseUrl + ACTION_URL_EVENTS);
         sendEmail(to, EmailTemplate.WELCOME, variables);
     }
 
     public void sendParticipationAttended(String to, String userName, String eventName, String eventDate) {
-        Map<String, Object> variables = new java.util.HashMap<>();
+        Map<String, Object> variables = new HashMap<>();
         variables.put("userName", userName);
         variables.put("eventName", eventName);
         variables.put("eventDate", eventDate);
-        variables.put("actionUrl", baseUrl + "/events");
+        variables.put("actionUrl", baseUrl + ACTION_URL_EVENTS);
         sendEmail(to, EmailTemplate.PARTICIPATION_ATTENDED, variables);
     }
 
     public void sendOrganizerRequestApproved(String to, String userName) {
-        Map<String, Object> variables = new java.util.HashMap<>();
+        Map<String, Object> variables = new HashMap<>();
         variables.put("userName", userName);
-        variables.put("actionUrl", baseUrl + "/events/create");
+        variables.put("actionUrl", baseUrl + ACTION_URL_CREATE_EVENT);
         sendEmail(to, EmailTemplate.ORGANIZER_REQUEST_APPROVED, variables);
     }
 
     public void sendOrganizerRequestRejected(String to, String userName, String comment) {
-        Map<String, Object> variables = new java.util.HashMap<>();
+        Map<String, Object> variables = new HashMap<>();
         variables.put("userName", userName);
-        variables.put("comment", comment != null ? comment : "Ваша заявка не прошла модерацию");
+        variables.put("comment", resolveComment(comment, "Ваша заявка не прошла модерацию"));
         sendEmail(to, EmailTemplate.ORGANIZER_REQUEST_REJECTED, variables);
     }
 
     public void sendEventChangesApproved(String to, String eventName, List<String> acceptedFields, String comment) {
         Map<String, Object> variables = new HashMap<>();
         variables.put("eventName", eventName);
-        variables.put("comment", comment != null ? comment : "Ваши изменения приняты");
-        variables.put("acceptedFields", acceptedFields); // список принятых полей
-        variables.put("actionUrl", baseUrl + "/events");
+        variables.put("comment", resolveComment(comment, "Ваши изменения приняты"));
+        variables.put("acceptedFields", acceptedFields);
+        variables.put("actionUrl", baseUrl + ACTION_URL_EVENTS);
         sendEmail(to, EmailTemplate.EVENT_CHANGES_APPROVED, variables);
     }
 
     public void sendEventChangesRejected(String to, String eventName, List<String> rejectedFields, String comment) {
         Map<String, Object> variables = new HashMap<>();
         variables.put("eventName", eventName);
-        variables.put("comment", comment != null ? comment : "Ваши изменения отклонены");
+        variables.put("comment", resolveComment(comment, "Ваши изменения отклонены"));
         variables.put("rejectedFields", rejectedFields);
-        variables.put("actionUrl", baseUrl + "/events");
+        variables.put("actionUrl", baseUrl + ACTION_URL_EVENTS);
         sendEmail(to, EmailTemplate.EVENT_CHANGES_REJECTED, variables);
     }
 }
