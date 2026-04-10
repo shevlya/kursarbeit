@@ -98,6 +98,13 @@ public class GlobalExceptionHandler {
         return buildBody(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(UtilException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Map<String, Object> handleUtilException(UtilException ex) {
+        log.error("Ошибка в утилите: {}", ex.getMessage(), ex);
+        return buildBody(HttpStatus.INTERNAL_SERVER_ERROR, "Ошибка обработки данных: " + ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, Object> handleAll(Exception ex) {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import ru.ssau.srestapp.exception.UtilException;
 
 import java.util.Map;
 
@@ -19,7 +20,7 @@ public class JsonConverter implements AttributeConverter<Map<String, Object>, St
         try {
             return mapper.writeValueAsString(attribute);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Не удалось преобразовать Map в JSON", e);
+            throw new UtilException("Не удалось преобразовать Map в JSON", e);
         }
     }
 
@@ -29,7 +30,7 @@ public class JsonConverter implements AttributeConverter<Map<String, Object>, St
         try {
             return mapper.readValue(dbData, Map.class);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Не удалось преобразовать JSON в Map", e);
+            throw new UtilException("Не удалось преобразовать JSON в Map", e);
         }
     }
 }

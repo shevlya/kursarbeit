@@ -1,6 +1,7 @@
 package ru.ssau.srestapp.util;
 
 import org.springframework.security.core.context.SecurityContextHolder;
+import ru.ssau.srestapp.exception.UtilException;
 import ru.ssau.srestapp.security.CustomUserDetails;
 
 public final class SecurityUtils {
@@ -11,7 +12,7 @@ public final class SecurityUtils {
     public static CustomUserDetails getCurrentUserDetails() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalStateException("Пользователь не аутентифицирован");
+            throw new UtilException("Пользователь не аутентифицирован");
         }
         return (CustomUserDetails) authentication.getPrincipal();
     }
