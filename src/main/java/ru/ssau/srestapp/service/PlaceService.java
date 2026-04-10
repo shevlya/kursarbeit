@@ -15,6 +15,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PlaceService {
 
+    private static final String TYPE_PHYSICAL = "PHYSICAL";
+    private static final String TYPE_ONLINE = "ONLINE";
+    private static final String TYPE_UNKNOWN = "UNKNOWN";
+
     private final PlaceRepository placeRepository;
 
     @Transactional(readOnly = true)
@@ -37,11 +41,11 @@ public class PlaceService {
 
     private String determinePlaceType(Place place) {
         if (place instanceof PhysicalPlace) {
-            return "PHYSICAL";
+            return TYPE_PHYSICAL;
         } else if (place instanceof OnlinePlace) {
-            return "ONLINE";
+            return TYPE_ONLINE;
         } else {
-            return "UNKNOWN";
+            return TYPE_UNKNOWN;
         }
     }
 }
