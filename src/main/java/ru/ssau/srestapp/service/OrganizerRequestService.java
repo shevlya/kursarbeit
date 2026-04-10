@@ -21,6 +21,8 @@ import java.util.List;
 @Slf4j
 public class OrganizerRequestService {
 
+    private static final String ROLE_ORGANIZER = "ORGANIZER";
+
     private final OrganizerRequestRepository organizerRequestRepository;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -33,7 +35,7 @@ public class OrganizerRequestService {
             throw new DuplicateEntityException("У вас уже есть заявка на рассмотрении");
         }
         User user = findUserOrThrow(currentUserId);
-        if ("ORGANIZER".equalsIgnoreCase(user.getRole().getRoleName())) {
+        if (ROLE_ORGANIZER.equalsIgnoreCase(user.getRole().getRoleName())) {
             throw new DuplicateEntityException("Вы уже являетесь организатором");
         }
         OrganizerRequest entity = new OrganizerRequest();
@@ -47,8 +49,7 @@ public class OrganizerRequestService {
     @Transactional(readOnly = true)
     public OrganizerRequestResponseDto getCurrentUserRequest() throws EntityNotFoundException {
         Long currentUserId = SecurityUtils.getCurrentUserId();
-        OrganizerRequest request = organizerRequestRepository.findLatestByUserId(currentUserId)
-                .orElseThrow(() -> new EntityNotFoundException("Заявка не найдена"));
+        OrganizerRequest request = organizerRequestRepository.findLatestByUserId(currentUserId).orElseThrow(() -> new EntityNotFoundException("Заявка не найдена"));
         return toDto(request);
     }
 
@@ -79,8 +80,7 @@ public class OrganizerRequestService {
         if (approved) {
             request.setRequestStatus(RequestStatus.APPROVED);
             User user = request.getUser();
-            Role organizerRole = roleRepository.findByRoleName("ORGANIZER")
-                    .orElseThrow(() -> new EntityNotFoundException(EntityType.ROLE.notFound("ORGANIZER")));
+            Role organizerRole = findOrganizerRoleOrThrow();
             user.setRole(organizerRole);
             userRepository.save(user);
             if (sendEmail != null && sendEmail) {
@@ -103,6 +103,10 @@ public class OrganizerRequestService {
     public void deleteRequest(Long id) throws EntityNotFoundException {
         findOrThrow(id);
         organizerRequestRepository.deleteById(id);
+    }
+
+    private Role findOrganizerRoleOrThrow() throws EntityNotFoundException {
+        return roleRepository.findByRoleName(ROLE_ORGANIZER).orElseThrow(() -> new EntityNotFoundException(EntityType.ROLE.notFound(ROLE_ORGANIZER)));
     }
 
     private OrganizerRequest findOrThrow(Long id) throws EntityNotFoundException {
