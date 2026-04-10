@@ -16,6 +16,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OnlinePlaceService {
 
+    private static final String PLACE_TYPE_ONLINE = "ONLINE";
+
     private final OnlinePlaceRepository onlinePlaceRepository;
 
     @Transactional(readOnly = true)
@@ -68,7 +70,7 @@ public class OnlinePlaceService {
                 e.getMeetingUrl(),
                 e.getSpecialNotes(),
                 e.getRecording(),
-                "ONLINE"
+                PLACE_TYPE_ONLINE
         );
     }
 }

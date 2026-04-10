@@ -16,6 +16,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PhysicalPlaceService {
 
+    private static final String PLACE_TYPE_PHYSICAL = "PHYSICAL";
+
     private final PhysicalPlaceRepository physicalPlaceRepository;
 
     @Transactional(readOnly = true)
@@ -66,7 +68,7 @@ public class PhysicalPlaceService {
                 e.getPlaceDescription(),
                 e.getAddress(),
                 e.getDisabilityAccessible(),
-                "PHYSICAL"
+                PLACE_TYPE_PHYSICAL
         );
     }
 }
