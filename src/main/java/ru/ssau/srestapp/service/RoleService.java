@@ -1,6 +1,7 @@
 package ru.ssau.srestapp.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ssau.srestapp.dto.role.RoleRequestDto;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RoleService {
 
     private final RoleRepository roleRepository;
@@ -37,6 +39,7 @@ public class RoleService {
         checkUniqueName(dto.getRoleName());
         Role entity = new Role();
         updateEntityFromDto(entity, dto);
+        log.info("Создана роль: {}", dto.getRoleName());
         return toDto(roleRepository.save(entity));
     }
 
@@ -48,6 +51,7 @@ public class RoleService {
             checkUniqueName(dto.getRoleName());
         }
         updateEntityFromDto(entity, dto);
+        log.info("Обновлена роль: {}", dto.getRoleName());
         return toDto(roleRepository.save(entity));
     }
 
@@ -55,6 +59,7 @@ public class RoleService {
     public void delete(Long id) throws EntityNotFoundException {
         findOrThrow(id);
         roleRepository.deleteById(id);
+        log.info("Удалена роль с id={}", id);
     }
 
     private void checkUniqueName(String name) throws DuplicateEntityException {
