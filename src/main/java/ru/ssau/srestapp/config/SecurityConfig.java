@@ -74,6 +74,7 @@ public class SecurityConfig {
             AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth.requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/users/register").permitAll()
+                .requestMatchers(POST, "/api/contact/send").permitAll()
                 .requestMatchers(GET, "/api/categories/**").permitAll()
                 .requestMatchers(GET, "/api/places/**").permitAll()
                 .requestMatchers(GET, "/api/online-places/**").permitAll()

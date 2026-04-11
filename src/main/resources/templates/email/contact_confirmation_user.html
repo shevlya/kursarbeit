@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Обращение принято</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f3ff;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td align="center" style="padding:40px 20px;">
+            <table width="580" cellpadding="0" cellspacing="0"
+                   style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+                <tr>
+                    <td style="background:#7c3aed;padding:32px 40px;text-align:center;">
+                        <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:700;">
+                            Ваше обращение принято!
+                        </h1>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:36px 40px;">
+                        <p style="color:#1a1635;font-size:16px;margin:0 0 16px;">
+                            Здравствуйте, <strong th:text="${userName}"></strong>!
+                        </p>
+                        <p style="color:#4a4566;font-size:15px;line-height:1.6;margin:0 0 12px;">
+                            Мы получили ваше обращение по теме:
+                            <strong style="color:#7c3aed;" th:text="${subject}"></strong>
+                        </p>
+                        <p style="color:#4a4566;font-size:15px;line-height:1.6;margin:0;">
+                            Наша команда рассмотрит его в ближайшее время и свяжется с вами по указанному адресу.
+                            Обычно мы отвечаем в течение 1–2 рабочих дней.
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="background:#f8f7ff;padding:20px 40px;text-align:center;">
+                        <p style="color:#9994b4;font-size:12px;margin:0;">
+                            Это автоматическое уведомление — отвечать на него не нужно.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

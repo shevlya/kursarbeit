@@ -184,4 +184,12 @@ public class EmailService {
         variables.put("actionUrl", baseUrl + ACTION_URL_EVENTS);
         sendEmail(to, EmailTemplate.EVENT_CHANGES_REJECTED, variables);
     }
+
+    public void sendContactMessageToAdmin(String adminTo, Map<String, Object> variables) {
+        sendEmail(adminTo, EmailTemplate.CONTACT_MESSAGE_ADMIN, variables);
+    }
+
+    public void sendContactConfirmationToUser(String userTo, Map<String, Object> variables) {
+        sendEmail(userTo, EmailTemplate.CONTACT_CONFIRMATION_USER, variables);
+    }
 }

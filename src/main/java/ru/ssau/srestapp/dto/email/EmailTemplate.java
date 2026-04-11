@@ -18,7 +18,9 @@ public enum EmailTemplate {
     ORGANIZER_REQUEST_APPROVED("organizer_request_approved.html", "Заявка одобрена. Теперь Вы организатор мероприятий."),
     ORGANIZER_REQUEST_REJECTED("organizer_request_rejected.html", "Заявка отклонена"),
     EVENT_CHANGES_APPROVED("event_changes_approved.html", "Изменения мероприятия одобрены"),
-    EVENT_CHANGES_REJECTED("event_changes_rejected.html", "Изменения мероприятия отклонены");
+    EVENT_CHANGES_REJECTED("event_changes_rejected.html", "Изменения мероприятия отклонены"),
+    CONTACT_MESSAGE_ADMIN("contact_message_admin.html", "Новое обращение от пользователя"),
+    CONTACT_CONFIRMATION_USER("contact_confirmation_user.html", "Ваше обращение принято");
 
     private final String fileName;
     private final String defaultSubject;
