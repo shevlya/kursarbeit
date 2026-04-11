@@ -80,7 +80,8 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/physical-places/**").permitAll()
                 .requestMatchers(GET, "/api/avatars/**").permitAll()
                 .requestMatchers(GET, "/api/events/**").permitAll()
-                .requestMatchers(GET, "/api/roles/**").permitAll();
+                .requestMatchers(GET, "/api/roles/**").permitAll()
+                .requestMatchers(GET, "/api/recommendations/**").permitAll();
     }
 
     private void configureAuthenticatedEndpoints(
