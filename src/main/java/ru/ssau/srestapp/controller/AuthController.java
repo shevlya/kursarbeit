@@ -8,6 +8,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.ssau.srestapp.dto.auth.LoginRequestDto;
 import ru.ssau.srestapp.dto.auth.RefreshTokenRequestDto;
 import ru.ssau.srestapp.dto.auth.TokenResponseDto;
@@ -54,6 +55,9 @@ public class AuthController {
     @GetMapping("/me")
     @ResponseStatus(HttpStatus.OK)
     public Map<String, Object> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Пользователь не аутентифицирован");
+        }
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Map<String, Object> response = new HashMap<>();
         response.put("userId", userDetails.getUserId());

@@ -63,4 +63,16 @@ public class UserController {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         return userService.updateDisability(currentUserId, disabilityUpdateDto.getHasDisability());
     }
+
+    @PatchMapping("/{id}/status")
+    @ResponseStatus(HttpStatus.OK)
+    public UserResponseDto updateUserStatus(@PathVariable Long id, @Valid @RequestBody StatusUpdateDto dto) throws EntityNotFoundException, AccessDeniedException {
+        return userService.updateUserStatus(id, dto.getUserStatus());
+    }
+
+    @PatchMapping("/{id}/role")
+    @ResponseStatus(HttpStatus.OK)
+    public UserResponseDto updateUserRole(@PathVariable Long id, @Valid @RequestBody RoleUpdateDto dto) throws EntityNotFoundException, AccessDeniedException {
+        return userService.updateUserRole(id, dto.getRoleId());
+    }
 }

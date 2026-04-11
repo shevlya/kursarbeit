@@ -117,6 +117,8 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/users/{id}").hasRole(ADMIN)
                 .requestMatchers(PUT, "/api/users/{id}").hasRole(ADMIN)
                 .requestMatchers(DELETE, "/api/users/{id}").hasRole(ADMIN)
+                .requestMatchers(PATCH, "/api/users/{id}/status").hasRole(ADMIN)
+                .requestMatchers(PATCH, "/api/users/{id}/role").hasRole(ADMIN)
                 .requestMatchers(GET, "/api/users").hasRole(ADMIN)
                 .requestMatchers("/api/organizer-requests/**").hasRole(ADMIN)
                 .requestMatchers(GET, "/api/users/me/interests/user/{userId}").hasRole(ADMIN)

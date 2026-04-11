@@ -106,10 +106,34 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    @Transactional
+    public UserResponseDto updateUserStatus(Long userId, UserStatus newStatus) throws EntityNotFoundException, AccessDeniedException {
+        ensureNotSelfModification(userId);
+        User user = findOrThrow(userId);
+        user.setUserStatus(newStatus);
+        return toDto(userRepository.save(user));
+    }
+
+    @Transactional
+    public UserResponseDto updateUserRole(Long userId, Long roleId) throws EntityNotFoundException, AccessDeniedException {
+        ensureNotSelfModification(userId);
+        User user = findOrThrow(userId);
+        Role newRole = findRoleOrThrow(roleId);
+        user.setRole(newRole);
+        return toDto(userRepository.save(user));
+    }
+
+    private void ensureNotSelfModification(Long targetUserId) throws AccessDeniedException {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (currentUserId.equals(targetUserId)) {
+            throw new AccessDeniedException("Вы не можете изменять свой собственный статус или роль");
+        }
+    }
+
     private void ensureCurrentUserHasAccess(Long targetUserId) throws AccessDeniedException {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         if (!currentUserId.equals(targetUserId)) {
-            throw new AccessDeniedException();
+            throw new AccessDeniedException("Доступ запрещён: вы можете редактировать только свой профиль");
         }
     }
 
